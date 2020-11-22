@@ -94,7 +94,7 @@ public:
     //!
     //! \brief Runs the TensorRT inference engine for this sample
     //!
-    std::vector<std::vector<float>> infer(std::string image_file_name);
+    std::vector<std::vector<float>> infer(uint8_t* rgb_data);
 
     //!
     //! \brief Cleans up any state created in the sample class
@@ -126,7 +126,7 @@ private:
     //!
     //! \brief Reads the input and mean data, preprocesses, and stores the result in a managed buffer
     //!
-    bool processInput(const samplesCommon::BufferManager& buffers, const std::string image_file);
+    bool processInput(const samplesCommon::BufferManager& buffers, const uint8_t* rgb_data);
 
     //!
     //! \brief Filters output detections and verify results
@@ -230,7 +230,7 @@ bool UffSSD::constructNetwork(SampleUniquePtr<nvinfer1::IBuilder>& builder,
 //! \details This function is the main execution function of the sample. It allocates the buffer,
 //!          sets inputs and executes the engine.
 //!
-std::vector<std::vector<float>> UffSSD::infer(std::string image_file_name)
+std::vector<std::vector<float>> UffSSD::infer(uint8_t* rgb_data)
 {
     // Create RAII buffer manager object
     samplesCommon::BufferManager buffers(mEngine, 1);
@@ -243,7 +243,7 @@ std::vector<std::vector<float>> UffSSD::infer(std::string image_file_name)
 
     // Read the input data into the managed buffers
     assert(mParams.inputTensorNames.size() == 1);
-    if (!processInput(buffers, image_file_name))
+    if (!processInput(buffers, rgb_data))
     {
         return {};
     }
@@ -266,15 +266,6 @@ std::vector<std::vector<float>> UffSSD::infer(std::string image_file_name)
 
     const float* detectionOut = static_cast<const float*>(buffers.getHostBuffer(mParams.outputTensorNames[0]));
     const int* keepCount = static_cast<const int*>(buffers.getHostBuffer(mParams.outputTensorNames[1]));
-
-    //    std::vector<std::string> classes(outputClsSize);
-    //    std::ifstream labelFile(mParams.labelsFileName);
-    //    std::string line;
-    //    int id = 0;
-    //    while (getline(labelFile, line))
-    //    {
-    //        classes[id++] = line;
-    //    }
 
     std::vector<std::vector<float>> result;
     for (int i = 0; i < keepCount[0]; ++i)
@@ -312,14 +303,11 @@ bool UffSSD::teardown()
 //!
 //! \brief Reads the input and mean data, preprocesses, and stores the result in a managed buffer
 //!
-bool UffSSD::processInput(const samplesCommon::BufferManager& buffers, const std::string image_file)
+bool UffSSD::processInput(const samplesCommon::BufferManager& buffers, const uint8_t* rgb_data)
 {
     const int inputC = mInputDims.d[0];
     const int inputH = mInputDims.d[1];
     const int inputW = mInputDims.d[2];
-    samplesCommon::PPM<3, 300, 300> mPPM;
-
-    readPPMFile(image_file, mPPM);
 
     float* hostDataBuffer = static_cast<float*>(buffers.getHostBuffer(mParams.inputTensorNames[0]));
     // Host memory for input buffer
@@ -328,7 +316,7 @@ bool UffSSD::processInput(const samplesCommon::BufferManager& buffers, const std
         // The color image to input should be in BGR order
         for (unsigned j = 0, volChl = inputH * inputW; j < volChl; ++j)
         {
-            hostDataBuffer[c * volChl + j] = (2.0 / 255.0) * float(mPPM.buffer[j * inputC + c]) - 1.0;
+            hostDataBuffer[c * volChl + j] = (2.0 / 255.0) * float(rgb_data[j * inputC + c]) - 1.0;
         }
     }
 
@@ -337,7 +325,7 @@ bool UffSSD::processInput(const samplesCommon::BufferManager& buffers, const std
 
 UffSSD* a_net;
 
-std::vector<std::vector<float>> DetectObjects(std::string image_file_name)
+void StartupDetector()
 {
     if (a_net == nullptr)
     {
@@ -347,8 +335,16 @@ std::vector<std::vector<float>> DetectObjects(std::string image_file_name)
             throw std::runtime_error("build failed");
         }
     }
+}
 
-    return a_net->infer(image_file_name);
+std::vector<std::vector<float>> DetectObjects(uint8_t* rgb_data)
+{
+    if (a_net == nullptr)
+    {
+        StartupDetector();
+    }
+
+    return a_net->infer(rgb_data);
 }
 
 void CleanupDetector()
