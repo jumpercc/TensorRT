@@ -48,30 +48,17 @@ public:
 
 struct UffSSDParams
 {
-    std::string uffFileName;
-    std::string labelsFileName;
+    std::string uffFileName = "ssd_relu6.uff";
+    std::string labelsFileName = "ssd_coco_labels.txt";
     int outputClsSize = 91;
     float visualThreshold = 0.5;
     std::vector<std::string> inputTensorNames = {"Input"};
     std::vector<std::string> outputTensorNames = {"NMS", "NMS_1"};
 
-    UffSSDParams()
+    void SetNetFilesDirectory(std::string net_files_directory)
     {
-        const size_t buf_size = 1024;
-        char buf[buf_size];
-        size_t read_size = readlink("/proc/self/exe", buf, buf_size);
-        if (read_size <= 0)
-        {
-            throw std::runtime_error("can't get current folder");
-        }
-        buf[read_size] = '\0';
-
-        std::string self_folder = buf;
-        size_t pos = self_folder.rfind('/');
-        self_folder.resize(pos);
-
-        uffFileName = self_folder + "/sample_ssd_relu6.uff";
-        labelsFileName = self_folder + "/ssd_coco_labels.txt";
+        uffFileName = net_files_directory + "/" + uffFileName;
+        labelsFileName = net_files_directory + "/" + labelsFileName;
     }
 };
 
@@ -89,7 +76,7 @@ public:
     //!
     //! \brief Function builds the network engine
     //!
-    bool build();
+    bool build(std::string net_files_directory);
 
     //!
     //! \brief Runs the TensorRT inference engine for this sample
@@ -142,11 +129,12 @@ private:
 //!
 //! \return Returns true if the engine was created successfully and false otherwise
 //!
-bool UffSSD::build()
+bool UffSSD::build(std::string net_files_directory)
 {
     TRT_Logger logger;
-
     initLibNvInferPlugins(&logger, "");
+
+    mParams.SetNetFilesDirectory(net_files_directory);
 
     auto builder = SampleUniquePtr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(logger));
     if (!builder)
@@ -325,12 +313,12 @@ bool UffSSD::processInput(const samplesCommon::BufferManager& buffers, const uin
 
 UffSSD* a_net;
 
-void StartupDetector()
+void StartupDetector(std::string net_files_directory)
 {
     if (a_net == nullptr)
     {
         a_net = new UffSSD();
-        if (!a_net->build())
+        if (!a_net->build(net_files_directory))
         {
             throw std::runtime_error("build failed");
         }
@@ -341,7 +329,7 @@ std::vector<std::vector<float>> DetectObjects(uint8_t* rgb_data)
 {
     if (a_net == nullptr)
     {
-        StartupDetector();
+        throw std::runtime_error("you should call StartupDetector first");
     }
 
     return a_net->infer(rgb_data);
