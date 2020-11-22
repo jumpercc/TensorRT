@@ -14,30 +14,7 @@
 # limitations under the License.
 #
 set(OPENSOURCE_SAMPLES_LIST
-    sampleAlgorithmSelector
-    sampleCharRNN
-    sampleDynamicReshape
-    sampleFasterRCNN
-    sampleGoogleNet
-    sampleINT8
-    sampleINT8API
-    sampleMLP
-    sampleMNIST
-    sampleMNISTAPI
-    sampleMovieLens
-    sampleMovieLensMPS
-    sampleNMT
-    sampleOnnxMNIST
-    samplePlugin
-    sampleReformatFreeIO
-    sampleSSD
-    sampleUffFasterRCNN
-    sampleUffMaskRCNN
-    sampleUffMNIST
-    sampleUffPluginV2Ext
     sampleUffSSD
-    sampleOnnxMnistCoordConvAC
-    trtexec
 )
 
 foreach(SAMPLE_ITER ${OPENSOURCE_SAMPLES_LIST})

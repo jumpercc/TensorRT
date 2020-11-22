@@ -1,0 +1,22 @@
+sudo dpkg -i deb/libcudnn8_8.0.0.180-1+cuda10.2_amd64.deb
+sudo dpkg -i deb/libcudnn8-dev_8.0.0.180-1+cuda10.2_amd64.deb
+
+cd /usr/local/cuda-10.2/targets/aarch64-linux/lib
+sudo ln -s /usr/lib/aarch64-linux-gnu/libcublas.so libcublas.so
+sudo ln -s /usr/lib/aarch64-linux-gnu/libcublasLt.so libcublasLt.so
+
+cd /pdk_files/cudnn/usr/lib/aarch64-linux-gnu
+sudo ln -fs /pdk_files/cudnn/usr/lib/aarch64-linux-gnu/libcudnn.so.8 libcudnn.so
+
+cd $TRT_SOURCE
+mkdir -p build && cd build
+cmake .. -DTRT_LIB_DIR=$TRT_RELEASE/lib -DTRT_OUT_DIR=`pwd`/out -DCUDA_VERSION=10.2 -DCMAKE_TOOLCHAIN_FILE=$TRT_SOURCE/cmake/toolchains/cmake_aarch64.toolchain
+make -j$(nproc)
+
+
+/usr/local/cuda-10.2/targets/aarch64-linux/lib/libcudart.so.10.2
+/pdk_files/cudnn/usr/lib/aarch64-linux-gnu/libcudnn.so.8
+
+/usr/local/cuda-10.2/targets/x86_64-linux/lib/libnvrtc.so.10.2 # WRONG
+
+/pdk_files/tensorrt/lib/libnvinfer.so, not found (try using -rpath or -rpath-link)

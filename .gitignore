@@ -6,3 +6,9 @@ build/
 *.nvmk
 *.sln
 *.vcxproj
+.idea/
+cmake-build-debug/
+**/CMakeCache.txt
+**/CMakeFiles/
+**/__pycache__/
+deb/

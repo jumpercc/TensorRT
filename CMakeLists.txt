@@ -93,7 +93,7 @@ message(STATUS "cuDNN version set to ${CUDNN_VERSION}")
 set_ifndef(PROTOBUF_VERSION ${DEFAULT_PROTOBUF_VERSION})
 message(STATUS "Protobuf version set to ${PROTOBUF_VERSION}")
 
-find_package(Threads REQUIRED)
+find_package(Threads QUIET HINTS "/usr/aarch64-linux-gnu/include")
 if (BUILD_PLUGINS OR BUILD_PARSERS)
     include(third_party/zlib.cmake)
     include(third_party/protobuf.cmake)
